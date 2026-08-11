@@ -1,0 +1,166 @@
+---
+title: "Getting started with manifest"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with manifest}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>"
+)
+```
+
+## Why keep a manifest?
+
+Before a dataset reaches a model it is usually *sampled*: outliers are trimmed,
+a geography or time window is chosen, invalid records are removed. Each of these
+decisions changes who is in the analysis and who is not, yet the reasoning
+behind them tends to live only in the analyst's head or in scattered code
+comments. Months later — during peer review, replication, or a hand-off — it can
+be surprisingly hard to answer a simple question: *how did we get from the raw
+data to the modeling sample, and why?*
+
+The **manifest** package produces a lightweight audit trail for exactly this
+stage of the workflow. You bracket your filtering code with `begin_manifest()`
+and `end_manifest()`, and the package records, for every row-reducing step:
+
+- a human-readable **rationale** (drawn from `#:` comments in the code),
+- the exact **code** that ran,
+- the number and percentage of rows **dropped**, and
+- the rows **remaining**.
+
+The result is printed as a table and saved as a timestamped CSV that can travel
+with your project as documentation of the sampling framework.
+
+## Comment conventions
+
+manifest reads your script and treats comments differently depending on their
+prefix:
+
+| Prefix | Meaning              | Captured in the manifest? |
+|:-------|:---------------------|:--------------------------|
+| `#:`   | Manifest criteria    | **Yes** — becomes the `CRITERIA` text |
+| `#: {name} ...` | Step label  | **Yes** — becomes the `STEP` label |
+| `##`   | Dev / internal note  | No |
+| `#`    | Ordinary comment     | No |
+
+A `#:` comment sitting directly above a filtering call is paired with that call.
+This lets you write the *reason* for a decision as a normal comment and have it
+promoted automatically into the documentation.
+
+## A worked example
+
+The package ships a complete, runnable example. Here is the script in full — note
+the `#: {name}` labels and `#:` rationales above each filtering step:
+
+```{r, echo = FALSE, results = "asis"}
+script <- system.file("examples", "example_cleaning.R", package = "manifest")
+cat("```r", readLines(script), "```", sep = "\n")
+```
+
+Because the example is executed with `source()`, `begin_manifest()`
+auto-detects the script's path, so `end_manifest()` can read it back and
+back-fill the `CRITERIA` and `CODE` columns from the `#:` comments. Run it:
+
+```{r, message = TRUE}
+library(manifest)
+
+script <- system.file("examples", "example_cleaning.R", package = "manifest")
+source(script)
+```
+
+`end_manifest()` also wrote a timestamped CSV. Reading it back shows the
+structured record that would live alongside your project:
+
+```{r}
+out_dir  <- file.path(tempdir(), "manifest")
+csv_file <- tail(sort(list.files(out_dir, pattern = "\\.csv$", full.names = TRUE)), 1)
+
+knitr::kable(read.csv(csv_file, check.names = FALSE))
+```
+
+## Anatomy of the workflow
+
+**`begin_manifest(data, ...)`** opens the log and records the starting row
+count. Two arguments are worth calling out:
+
+- `description` — a sentence about the dataset, stored on the `START` row.
+- `build_script` — the path to the script that *assembled* the raw data (often
+  distinct from the cleaning script you are annotating). It is recorded so the
+  manifest points back to the data's origin.
+
+**`mfilter(data, ...)`** is a drop-in replacement for `dplyr::filter()`. It
+applies the filter *and* records the row delta. Pair it with a `#:` comment on
+the line above to supply the rationale automatically.
+
+**`end_manifest(data)`** parses the script for `#:` comments, back-fills the
+`CRITERIA` / `CODE` columns, prints the summary table, and writes the CSV.
+
+**`manifest_log()`** lets you peek at the running log at any point *before*
+`end_manifest()`.
+
+### Reading the columns
+
+| Column        | Meaning |
+|:--------------|:--------|
+| `STEP`        | Step number, plus the `{name}` label if one was given |
+| `DROPPED`     | Rows removed by this step |
+| `DROPPED_PCT` | Those rows as a share of the **starting** N |
+| `REMAIN`      | Rows still in play after the step |
+| `REMAIN_PCT`  | Remaining rows as a share of the starting N |
+| `CRITERIA`    | The rationale, from the `#:` comment |
+| `CODE`        | The exact expression that ran |
+
+Note that percentages are always relative to the original row count, so
+`REMAIN_PCT` reads as "share of the raw data still in the modeling sample" — a
+convenient headline number for a methods section.
+
+## Steps that aren't simple filters
+
+Not every row-reducing operation is a `filter()`. Joins, de-duplication, and
+aggregation also drop rows, and for those you can log the step manually with
+`log_step()`, passing the rationale explicitly via `criteria =`:
+
+```{r}
+library(dplyr)
+
+set.seed(1)
+roster <- data.frame(
+  id     = 1:20,
+  region = sample(c("A", "B"), 20, replace = TRUE),
+  active = sample(c(TRUE, FALSE), 20, replace = TRUE)
+)
+
+begin_manifest(
+  roster,
+  description  = "Toy roster to demonstrate log_step()",
+  output_dir   = file.path(tempdir(), "roster-manifest"),
+  dataset_name = "roster",
+  verbose      = FALSE
+)
+
+# A normal filter, tracked automatically:
+roster <- mfilter(roster, active)
+
+# A de-duplication that filter() can't express — log it by hand:
+roster <- roster[!duplicated(roster$region), ]
+roster <- log_step(roster, criteria = "Keep one representative record per region")
+
+manifest_log()
+```
+
+Here `mfilter()` and `log_step()` interleave freely, and `log_step()` carries
+its own `criteria` string rather than relying on a `#:` comment. Call
+`end_manifest()` when you are done to finalize the table and write the CSV, just
+as in the first example.
+
+## Where to go next
+
+- Run the shipped example yourself:
+  `source(system.file("examples", "example_cleaning.R", package = "manifest"))`
+- See `?begin_manifest`, `?mfilter`, `?log_step`, and `?end_manifest` for the
+  full argument reference.

@@ -39,8 +39,8 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# pkgdown site
-docs/
+# pkgdown site is served from docs/ via GitHub Pages, so it is tracked
+# (do not ignore docs/)
 
 # translation temp files
 po/*~

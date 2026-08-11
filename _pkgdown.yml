@@ -1,0 +1,40 @@
+url: https://nonprofit-open-data-collective.github.io/manifest/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#1a5276"
+
+home:
+  title: manifest
+  description: >
+    A lightweight audit trail for the data-filtering stage of a research
+    workflow. Document, in a structured and reproducible way, how the sampling
+    framework carries a dataset from raw records to modeling sample.
+
+navbar:
+  structure:
+    left:  [intro, reference, articles]
+    right: [search, github]
+
+reference:
+  - title: Bracketing the workflow
+    desc: Open and close a manifest around your filtering code.
+    contents:
+      - begin_manifest
+      - end_manifest
+  - title: Logging steps
+    desc: Record row-reducing operations as they happen.
+    contents:
+      - mfilter
+      - log_step
+      - manifest_log
+  - title: Package overview
+    contents:
+      - manifest-package
+
+articles:
+  - title: Get started
+    navbar: ~
+    contents:
+      - manifest
