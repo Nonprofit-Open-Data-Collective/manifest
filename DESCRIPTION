@@ -1,0 +1,18 @@
+Package: manifest
+Title: Document and report the impact of the sampling framework on the dataset
+Version: 0.0.0.9000
+Author: Jesse Lecy [aut, cre]
+Description: The manifest package provides a lightweight audit trail for 
+    data filtering prior to modeling, automating the documentation of 
+    steps in the workflow that remove observations. It specifically is used in 
+    the section of the workflow where a researcher applies sample framework criteria 
+    and discretion to determine which portion of the data is used in models and 
+    which portion gets dropped. By bracketing the script with `begin_manifest()` and 
+    `end_manifest()` markers, researchers get a structured log - saved as a timestamped CSV - 
+    that records for each step: the human-readable rationale (drawn from #: comments 
+    in the code), the exact code executed, the number and percentage of rows dropped, 
+    and the rows remaining. 
+License: MIT
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3

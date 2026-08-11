@@ -1,0 +1,6 @@
+"STEP","DROPPED","DROPPED_PCT","REMAIN","REMAIN_PCT","CRITERIA","CODE"
+"START",NA,"",1000,"100%","description{Simulated dataset created to demonstrate package functionality}","source{compile_data.R}"
+"(1) Drop outliers in X",250,"25.0%",750,"75.0%","Omit records where X statistic exceeds 10 (outliers per pre-reg criteria)","d <- mfilter(d, x <= 10)"
+"(2) Study geography",441,"44.1%",309,"30.9%","Restrict study to Minnesota and South Dakota (primary catchment states)","d <- mfilter(d, state %in% c(""MN"", ""SD""))"
+"(3) Study time period",143,"14.3%",166,"16.6%","Limit to study period 2020–2022","d <- mfilter(d, year >= 2020, year <= 2022)"
+"(4)",0,"0.0%",166,"16.6%","Remove records with invalid scores (score < 0 indicates data entry error)","d <- mfilter(d, score >= 0)"

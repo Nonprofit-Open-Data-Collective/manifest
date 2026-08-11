@@ -1,0 +1,6 @@
+"STEP","DROPPED","DROPPED_PCT","REMAIN","REMAIN_PCT","CRITERIA","CODE"
+"START",NA,"",100,"100%","description{IRS SOI nonprofit records FY2018-2023.}","source{proj/data-raw/build_soi.R}"
+"(1) Limit outliers for X",36,"36.0%",64,"64.0%","Omit records where X statistic exceeds 10 (outliers per pre-reg criteria)","d <- mfilter(d, x <= 10)"
+"(2)",35,"35.0%",29,"29.0%","Restrict study to Minnesota and South Dakota (primary catchment states)","d <- mfilter(d, state %in% c('MN','SD'))"
+"(3) Study period",17,"17.0%",12,"12.0%","Limit to study period 2020-2022","d <- mfilter(d, year >= 2020 & year <= 2022)"
+"(4)",0,"0.0%",12,"12.0%","Remove records with invalid scores (score < 0)","d <- mfilter(d, score >= 0)"
